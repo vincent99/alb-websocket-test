@@ -33,6 +33,13 @@ function httpRequest(req, res) {
   const parsed = url.parse(req.url, true);
   const fromQuery = parsed.query.id;
 
+  if ( parsed.path === '/healthz' ) {
+    log('Health');
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   let body = '';
   req.on('data', (chunk) => {
     body += chunk.toString();
@@ -42,6 +49,7 @@ function httpRequest(req, res) {
     log('HTTP Req  ', `amzHeader=${amzHeader}, query=${fromQuery} body=${body}`);
     res.writeHead(200, { 'content-type': 'application/json' });
     res.write(JSON.stringify({
+      path: parsed.pathname,
       amzHeader,
       fromQuery,
       fromBody: body
@@ -63,15 +71,16 @@ function wsRequest(req) {
     log('WS Message', `amzHeader=${amzHeader}, query=${fromQuery} body=${body}, id=${id}`);
 
     req.send(JSON.stringify({
+      path: parsed.pathname,
       amzHeader,
       fromQuery,
       fromBody: body,
-      connectionId: id,
+      serverId: id,
     }));
   });
 
   req.on('close', function(reasonCode, description) {
-    log('WS Close  ', `id=${id}, reason=${reasonCode}, description=${description}`);
+    log('WS Close  ', `amzHeader=${amzHeader}, query=${fromQuery}, id=${id}, reason=${reasonCode}, description=${description}`);
   });
 }
 
